@@ -1,5 +1,7 @@
 const { userService } = require("../../services");
 const catchAsync = require("../../utils/catchAsync");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const register = catchAsync(async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -31,6 +33,8 @@ const register = catchAsync(async (req, res) => {
 const login = catchAsync(async(req , res)=>{
      const { email, password } = req.body;
 
+     console.log(`========email, password ======`, email, password );
+
     if (!email || !password) {
       return res.status(400).json({
         message: "Email and password are required",
@@ -38,6 +42,7 @@ const login = catchAsync(async(req , res)=>{
     }
 
     const user = await userService.getDetails({ email , deletedAt : null });
+    console.log(`========user======`, user);
 
     if (!user) {
       return res.status(400).json({
@@ -46,6 +51,7 @@ const login = catchAsync(async(req , res)=>{
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log(`========isMatch======`, isMatch);
 
     if (!isMatch) {
       return res.status(400).json({

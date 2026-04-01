@@ -3,7 +3,7 @@ const { default: mongoose } = require("mongoose");
 const validate = require("../middleware/validate.middleware");
 const validator = require("validator");
 const { DEVICE_TYPE } = require("../helper/constant.helper");
-const bcrypt = required("bcryptjs");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -63,12 +63,10 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-userSchema.pre("save", async function (next) {
-  const user = this;
-  if (user.isModified("password")) {
-    user.password = await bcrypt.hash(user.password, 8);
-  }
-  next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
 userSchema.methods.toJSON = function () {
