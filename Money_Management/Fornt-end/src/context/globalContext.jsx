@@ -1,7 +1,10 @@
 import React, { useContext, useState } from "react";
 import axios from "axios";
+import { useEffect } from "react";
 
-const BASE_URL = "https://money-manage-krmx.onrender.com/api/v1/";
+// const BASE_URL = "api/v1/";
+const BASE_URL_V1 = import.meta.env.VITE_BASE_URL_V1;
+console.log(`========BASE_URL_V1======`, BASE_URL_V1);
 
 const GlobalContext = React.createContext();
 
@@ -9,10 +12,23 @@ export const GlobalProvider = ({ children }) => {
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      setUser(storedUser);
+    }
+  }, []);
 
   const addIncome = async (incomes) => {
     const response = await axios
-      .post(`${BASE_URL}admin/income/create`, incomes)
+      .post(`${BASE_URL_V1}admin/income/create`, incomes, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .catch((err) => {
         setError(err.response.data.message);
       });
@@ -21,7 +37,11 @@ export const GlobalProvider = ({ children }) => {
   };
 
   const getListIncome = async () => {
-    const response = await axios.get(`${BASE_URL}admin/income/list`);
+    const response = await axios.get(`${BASE_URL_V1}admin/income/list`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     setIncomes(response.data.data);
 
@@ -29,7 +49,14 @@ export const GlobalProvider = ({ children }) => {
   };
 
   const deleteIncome = async (id) => {
-    const response = await axios.delete(`${BASE_URL}admin/income/delete/${id}`);
+    const response = await axios.delete(
+      `${BASE_URL_V1}admin/income/delete/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
     getListIncome();
   };
 
@@ -44,7 +71,11 @@ export const GlobalProvider = ({ children }) => {
 
   const addExpense = async (expenses) => {
     const response = await axios
-      .post(`${BASE_URL}admin/expense/create`, expenses)
+      .post(`${BASE_URL_V1}admin/expense/create`, expenses, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       .catch((err) => {
         setError(err.response.data.message);
       });
@@ -53,7 +84,11 @@ export const GlobalProvider = ({ children }) => {
   };
 
   const getListExpense = async () => {
-    const response = await axios.get(`${BASE_URL}admin/expense/list`);
+    const response = await axios.get(`${BASE_URL_V1}admin/expense/list`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     setExpenses(response.data.data);
 
@@ -62,7 +97,12 @@ export const GlobalProvider = ({ children }) => {
 
   const deleteExpense = async (id) => {
     const response = await axios.delete(
-      `${BASE_URL}admin/expense/delete/${id}`,
+      `${BASE_URL_V1}admin/expense/delete/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
     );
     getListExpense();
   };
@@ -78,18 +118,58 @@ export const GlobalProvider = ({ children }) => {
 
   console.log(`========totalExpense()======`, totalExpense());
 
-      const totalBalance = () => {
-        return totalIncome() - totalExpense()
+  const totalBalance = () => {
+    return totalIncome() - totalExpense();
+  };
+
+  const transactionHistory = () => {
+    const history = [...incomes, ...expenses];
+    history.sort((a, b) => {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    return history.slice(0, 3);
+  };
+
+  const loginUser = async (data) => {
+    const response = await axios.post(`${BASE_URL_V1}admin/auth/login`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(`========response======`, response);
+
+    if (response.data.token) {
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      setUser(response.data.user);
+    } else {
+      alert(response.message || "Login failed");
     }
 
-    const transactionHistory = () => {
-        const history = [...incomes, ...expenses]
-        history.sort((a, b) => {
-            return new Date(b.createdAt) - new Date(a.createdAt)
-        })
+    // return res.json();
+  };
 
-        return history.slice(0, 3)
+  const registerUser = async (data) => {
+    const res = await axios.post(`${BASE_URL_V1}admin/auth/register`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.message === "User registered successfully") {
+      alert("Signup successful! Please login.");
+    } else {
+      alert(res.message);
     }
+    // return res.json();
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  };
 
   return (
     <GlobalContext.Provider
@@ -105,7 +185,11 @@ export const GlobalProvider = ({ children }) => {
         addExpense,
         expenses,
         totalBalance,
-        transactionHistory
+        transactionHistory,
+        loginUser,
+        registerUser,
+        logout,
+        user,
       }}
     >
       {children}

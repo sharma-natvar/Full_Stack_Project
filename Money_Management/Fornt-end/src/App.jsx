@@ -8,9 +8,11 @@ import Dashboard from "./Components/Dashboard/Dashboard";
 import Incomes from "./Components/Incomes/Incomes";
 import Expenses from "./Components/Expenses/Expenses";
 import { useGlobalContext } from "./context/globalContext";
+import AuthFormPage from "./Components/Auth/AuthFormPage";
 
 function App() {
   const [active, setActive] = useState(1);
+  const { user } = useGlobalContext();
 
   const global = useGlobalContext();
   console.log(`========global======`, global);
@@ -34,6 +36,13 @@ function App() {
     return <Orb />;
   }, []);
 
+  console.log(`========user======`, user);
+  if (!user) {
+    return <AuthFormPage />;
+  }
+
+  console.log(`========user======`, user);
+
   return (
     <AppStyled bg={bg} className="App">
       {orbMemo}
@@ -47,20 +56,19 @@ function App() {
 
 const AppStyled = styled.div`
   height: 100vh;
-  background-image: url(${props => props.bg});
+  background-image: url(${(props) => props.bg});
   position: relative;
-  main{
+  main {
     flex: 1;
     background: rgba(252, 246, 249, 0.78);
-    border: 3px solid #FFFFFF;
+    border: 3px solid #ffffff;
     backdrop-filter: blur(4.5px);
     border-radius: 32px;
     overflow-x: hidden;
-    &::-webkit-scrollbar{
+    &::-webkit-scrollbar {
       width: 0;
     }
   }
 `;
-
 
 export default App;
